@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX_LINHA 256
 
@@ -22,7 +23,7 @@ int proximoId(const char *arquivo)
 
     char linha[MAX_LINHA];
     int ultimo_id = 0;
-    int id; 
+    int id;
 
     while (fgets(linha, sizeof(linha), leitura))
     {
@@ -34,6 +35,59 @@ int proximoId(const char *arquivo)
 
     fclose(leitura);
     return ultimo_id + 1;
+}
+
+void transformaEVerificaEmMinuscula(char nomes[])
+{
+
+    // percorre enquanto
+    for (int i = 0; nomes[i] != '\0'; i++)
+    {
+        nomes[i] = tolower(nomes[i]);
+    }
+}
+
+// verifica se o nome esta no arquivo e para
+int nomejaExisteNoArquivo(const char *arquivo, char b[])
+{
+    FILE *leitura = fopen(arquivo, "r");
+    if (leitura == NULL)
+    {
+        return 0;
+    }
+
+    char linha[MAX_LINHA];
+    char nomeLido[780];
+
+    while (fgets(linha, sizeof(linha), leitura))
+    {
+        if (sscanf(linha, "%*d;%49[^;]", nomeLido) == 1) // esse cod é para ele ler a linh ate 50 de tamanho
+        {
+            transformaEVerificaEmMinuscula(nomeLido); // transfomra emm minuscula para verificar o conteudo, se n chamasse ia dar como diferente por ter 1 maiuscula
+            if (strcmp(nomeLido, b) == 0)
+            {
+                fclose(leitura);
+                return 1;
+                // printf("pau no seu cu! nao ppode te 2 nomes iguas ");
+            }
+        }
+    }
+
+    fclose(leitura);
+    return 0;
+}
+
+// essa func aq verifica se a pessoa foi adicionar mais de 1 nome e vai escrever 2 vezes o msm nome
+int nomeJaEscrito(produtos produto[], int tamanho, const char *nome)
+{
+    for (int i = 0; i < tamanho; i++)
+    {
+        if (strcmp(produto[i].nome, nome) == 0)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void gravarProdutos(const char *arquivo)
@@ -66,7 +120,6 @@ void gravarProdutos(const char *arquivo)
     {
         printf("\n--- Produto %d ---\n", i + 1);
 
-
         // if (n > 1) {
         //             ultimo_id = produto[i].id + 1;
         // } else {
@@ -77,10 +130,19 @@ void gravarProdutos(const char *arquivo)
         fgets(produto[i].nome, sizeof(produto[i].nome), stdin);
         produto[i].nome[strcspn(produto[i].nome, "\n")] = '\0'; // troca o \n por fim de texto
 
+        transformaEVerificaEmMinuscula(produto[i].nome);
+
         if (produto[i].nome[0] == '\0') // \0 é o final da string, se ele tiver igual a \0, esta vazio
         {
-            printf("Nome invalido, por favor ddigite algo");
+            printf("Nome invalido, por favor digite algo");
             i--; // i-- serve para voltar uma açao, se deu erro o loop continua, mas com o i-- ele volta
+            continue;
+        }
+
+        if (nomejaExisteNoArquivo(arquivo, produto[i].nome) || nomeJaEscrito(produto, i, produto[i].nome))
+        {
+            printf("Nao pode adicionar mais de 1 nome igual");
+            i--;
             continue;
         }
 
