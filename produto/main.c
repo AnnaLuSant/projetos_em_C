@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_LINHA 256
+
 typedef struct
 {
     int id;
@@ -37,22 +39,36 @@ void gravarProdutos(const char *arquivo)
     {
         printf("\n--- Produto %d ---\n", i + 1);
 
-        printf("ID: ");
-        scanf("%d", &produto[i].id);
-        getchar();
-
-        if (produto[i].id <= 0) {  // nao pode aceitar valor 0 e nem negativo
-            printf("valor invalido, por favor digite algo");
-            i--;
-            continue;
+        // vai ler o arquivo | "r" só le
+        FILE *fp = fopen("Produtos.csv", "r");
+        if (fp == NULL)
+        {
+            printf("Erro ao abrir o arquivo");
+            return 1;
         }
 
+        // id auto_increment -> baseando-se no ultimo ID do Produto.csv
+        char linha[MAX_LINHA];
+        int ultimo_id = 0;
+        int id;
+
+        while (fgets(linha, sizeof(linha), fp))
+        {
+            if (sscanf(linha, "%d", &id) == 1)
+            {
+                ultimo_id++;
+            }
+        }
+
+        produto[i].id =ultimo_id;
+        fclose(fp);
+        
         printf("Nome: ");
         fgets(produto[i].nome, sizeof(produto[i].nome), stdin);
         produto[i].nome[strcspn(produto[i].nome, "\n")] = '\0'; // troca o \n por fim de texto
 
         if (produto[i].nome[0] == '\0') // \0 é o final da string, se ele tiver igual a \0, esta vazio
-        { 
+        {
             printf("Nome invalido, por favor ddigite algo");
             i--; // i-- serve para voltar uma açao, se deu erro o loop continua, mas com o i-- ele volta
             continue;
@@ -62,7 +78,8 @@ void gravarProdutos(const char *arquivo)
         scanf("%f", &produto[i].valor);
         getchar();
 
-        if (produto[i].valor <= 0) { // nao pode aceitar valor 0 e nem negativo
+        if (produto[i].valor <= 0)
+        { // nao pode aceitar valor 0 e nem negativo
             printf("valor invalido, por favor digite algo");
             i--; // i-- serve para voltar uma açao, se deu erro o loop continua, mas com o i-- ele volta
             continue;
@@ -71,13 +88,13 @@ void gravarProdutos(const char *arquivo)
         printf("Quantidade em estoque: ");
         scanf("%d", &produto[i].qtd);
         getchar();
-    
-        if (produto[i].qtd <= 0) {  // nao pode aceitar valor 0 e nem negativo
+
+        if (produto[i].qtd < 0)
+        { // nao pode aceitar valor 0 e nem negativo
             printf("quantidade invalida, por favor digite algo");
             i--; // i-- serve para voltar uma açao, se deu erro o loop continua, mas com o i-- ele volta
             continue;
         }
-
     }
 
     for (int i = 0; i < n; i++)
@@ -91,7 +108,7 @@ void gravarProdutos(const char *arquivo)
     printf("Produtos gravados com sucesso!\n");
 }
 
-//func de ler os produtos do .txt
+// func de ler os produtos do csv
 int lerProdutos(const char *arquivo, produtos p[])
 {
     FILE *fp = fopen(arquivo, "r");
@@ -105,7 +122,7 @@ int lerProdutos(const char *arquivo, produtos p[])
     char linha[300];
     int n = 0; // comeca o array em 0
 
-    while (fgets(linha, sizeof(linha), fp) && n < 100) // vai percorrer 
+    while (fgets(linha, sizeof(linha), fp) && n < 100) // vai percorrer
     {
         sscanf(linha, "%d;%49[^;];%f;%d",
                &p[n].id,
@@ -121,7 +138,7 @@ int lerProdutos(const char *arquivo, produtos p[])
     return n;
 }
 
-//funcao de printa a tabela
+// funcao de printa a tabela
 void formatarTabela(produtos p[], int n)
 {
     printf("\n-----------------------------------------------------\n");
@@ -141,13 +158,12 @@ void formatarTabela(produtos p[], int n)
 
 int main()
 {
-    const char *arquivo = "Produtos.txt";
-    
+    const char *arquivo = "Produtos.csv";
+
     produtos p[100];
 
     while (1)
     {
-
         printf("\n------------------------\n ");
         printf("Bem vindo a loja \n");
         printf("------------------------\n");
@@ -156,18 +172,19 @@ int main()
         printf("0. Sair da loja\n");
         printf("------------------------\n");
         printf("Escolha uma Opcao: \n");
-        
+
         int opcao;
-        scanf("%d" , &opcao);
+        scanf("%d", &opcao);
 
         int n;
-        switch (opcao) {
+        switch (opcao)
+        {
         case 1:
             gravarProdutos(arquivo);
             break;
         case 2:
             n = lerProdutos(arquivo, p);
-            formatarTabela(p, n);    
+            formatarTabela(p, n);
             break;
         case 0:
             printf("saindo da loja...");
@@ -177,6 +194,5 @@ int main()
             break;
         }
     }
-    
     return 0;
 }
