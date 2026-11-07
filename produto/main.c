@@ -11,6 +11,31 @@ typedef struct
     int qtd;
 } produtos;
 
+// func pra ler e ve o ID
+int proximoId(const char *arquivo)
+{
+    FILE *leitura = fopen(arquivo, "r");
+    if (leitura == NULL)
+    {
+        return 1;
+    }
+
+    char linha[MAX_LINHA];
+    int ultimo_id = 0;
+    int id; 
+
+    while (fgets(linha, sizeof(linha), leitura))
+    {
+        if (sscanf(linha, "%d", &id) == 1)
+        {
+            ultimo_id = id; // id é onde o valor esta salvo
+        }
+    }
+
+    fclose(leitura);
+    return ultimo_id + 1;
+}
+
 void gravarProdutos(const char *arquivo)
 {
     FILE *fp = fopen(arquivo, "a"); // "a" para não apagar o que já existe
@@ -35,34 +60,19 @@ void gravarProdutos(const char *arquivo)
 
     produtos produto[100];
 
+    int id_atual = proximoId(arquivo);
+
     for (int i = 0; i < n; i++)
     {
         printf("\n--- Produto %d ---\n", i + 1);
 
-        // vai ler o arquivo | "r" só le
-        FILE *fp = fopen("Produtos.csv", "r");
-        if (fp == NULL)
-        {
-            printf("Erro ao abrir o arquivo");
-            return 1;
-        }
 
-        // id auto_increment -> baseando-se no ultimo ID do Produto.csv
-        char linha[MAX_LINHA];
-        int ultimo_id = 0;
-        int id;
+        // if (n > 1) {
+        //             ultimo_id = produto[i].id + 1;
+        // } else {
+        //     produto[i].id =ultimo_id;
+        // }
 
-        while (fgets(linha, sizeof(linha), fp))
-        {
-            if (sscanf(linha, "%d", &id) == 1)
-            {
-                ultimo_id++;
-            }
-        }
-
-        produto[i].id =ultimo_id;
-        fclose(fp);
-        
         printf("Nome: ");
         fgets(produto[i].nome, sizeof(produto[i].nome), stdin);
         produto[i].nome[strcspn(produto[i].nome, "\n")] = '\0'; // troca o \n por fim de texto
@@ -95,6 +105,8 @@ void gravarProdutos(const char *arquivo)
             i--; // i-- serve para voltar uma açao, se deu erro o loop continua, mas com o i-- ele volta
             continue;
         }
+
+        produto[i].id = id_atual++;
     }
 
     for (int i = 0; i < n; i++)
