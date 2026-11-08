@@ -39,7 +39,6 @@ int proximoId(const char *arquivo)
 
 void transformaEVerificaEmMinuscula(char nomes[])
 {
-
     // percorre enquanto
     for (int i = 0; nomes[i] != '\0'; i++)
     {
@@ -208,7 +207,6 @@ int lerProdutos(const char *arquivo, produtos p[])
     }
 
     fclose(fp);
-
     return n;
 }
 
@@ -228,6 +226,68 @@ void formatarTabela(produtos p[], int n)
                p[i].qtd);
     }
     printf("-----------------------------------------------------\n");
+}
+
+// Função de buscar produtos
+void buscarProduto(const char *arquivo)
+{
+
+    produtos p[100];
+    int id_busca;
+    int p_encontrado = 0;
+
+    int n = lerProdutos(arquivo, p);
+
+    printf("\nDigite o ID do produto: ");
+    scanf("%d", &id_busca);
+
+    for (int i = 0; i < n; i++)
+    {
+        if (p[i].id == id_busca)
+        {
+            printf("\nProduto encontrado!\n");
+            formatarTabela(&p[i], 1);
+
+            p_encontrado = 1;
+            break;
+        }
+    }
+
+    if (p_encontrado == 0)
+    {
+        printf("\nProduto nao encontrado!\n");
+    }
+}
+
+// Ordenar produtos em ordem algabética
+
+void mariaJoaquina(produtos v[], int inicio, int fim)
+{
+    int i = inicio, j = fim;
+    produtos pivo = v[(inicio + fim) / 2];
+    produtos aux;
+
+    while (i <= j)
+    {
+        while (strcmp(v[i].nome, pivo.nome) < 0)
+            i++;
+        while (strcmp(v[j].nome, pivo.nome) > 0)
+            j--;
+        if (i <= j)
+        {
+            aux = v[i];
+            v[i] = v[j];
+            v[j] = aux;
+
+            i++;
+            j--;
+        }
+    }
+    if (inicio < j)
+        mariaJoaquina(v, inicio, j);
+
+    if (i < fim)
+        mariaJoaquina(v, i, fim);
 }
 
 int main()
@@ -260,6 +320,24 @@ int main()
             n = lerProdutos(arquivo, p);
             formatarTabela(p, n);
             break;
+        case 3:
+            buscarProduto(arquivo);
+            break;
+
+        case 4:
+            n = lerProdutos(arquivo, p);
+
+            if (n > 0)
+            {
+                mariaJoaquina(p, 0, n - 1);
+                formatarTabela(p, n);
+            }
+            else
+            {
+                printf("Nenhum produto encontrado!\n");
+            }
+            break;
+
         case 0:
             printf("saindo da loja...");
             return 0;
