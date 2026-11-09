@@ -49,14 +49,14 @@ void transformaEVerificaEmMinuscula(char nomes[])
 // verifica se o nome esta no arquivo e para
 int nomejaExisteNoArquivo(const char *arquivo, char b[])
 {
-    FILE *leitura = fopen(arquivo, "r");
+    FILE *leitura = fopen(arquivo, "r"); // r de leitura em ingles
     if (leitura == NULL)
     {
         return 0;
     }
 
     char linha[MAX_LINHA];
-    char nomeLido[780];
+    char nomeLido[50];
 
     while (fgets(linha, sizeof(linha), leitura))
     {
@@ -71,7 +71,6 @@ int nomejaExisteNoArquivo(const char *arquivo, char b[])
             }
         }
     }
-
     fclose(leitura);
     return 0;
 }
@@ -99,7 +98,6 @@ void gravarProdutos(const char *arquivo)
     }
 
     int n;
-
     printf("Quantos produtos deseja gravar? ");
     scanf("%d", &n);
     getchar(); // consome o Enter que sobrou
@@ -199,7 +197,7 @@ int lerProdutos(const char *arquivo, produtos p[])
     {
         sscanf(linha, "%d;%49[^;];%f;%d",
                &p[n].id,
-               p[n].nome,
+               &p[n].nome,
                &p[n].valor,
                &p[n].qtd);
 
@@ -228,10 +226,9 @@ void formatarTabela(produtos p[], int n)
     printf("-----------------------------------------------------\n");
 }
 
-// Função de buscar produtos
+// Função de buscar produtos pelo ID
 void buscarProduto(const char *arquivo)
 {
-
     produtos p[100];
     int id_busca;
     int p_encontrado = 0;
@@ -260,7 +257,6 @@ void buscarProduto(const char *arquivo)
 }
 
 // Ordenar produtos em ordem algabética
-
 void mariaJoaquina(produtos v[], int inicio, int fim)
 {
     int i = inicio, j = fim;
@@ -269,6 +265,8 @@ void mariaJoaquina(produtos v[], int inicio, int fim)
 
     while (i <= j)
     {
+        // strcmp compara 2 strings
+        //  comparando letra por letra
         while (strcmp(v[i].nome, pivo.nome) < 0)
             i++;
         while (strcmp(v[j].nome, pivo.nome) > 0)
@@ -290,6 +288,112 @@ void mariaJoaquina(produtos v[], int inicio, int fim)
         mariaJoaquina(v, i, fim);
 }
 
+// busca de Z para A -> mesma coisa do quickSort MariaJoaquina, só muda o sinal na verificacao
+void cirilo(produtos v[], int inicio, int fim)
+{
+    int i = inicio, j = fim;
+    produtos pivo = v[(inicio + fim) / 2];
+    produtos aux;
+
+    while (i <= j)
+    {
+        // Vai avançando enquanto estiver dps do meio
+        while (strcmp(v[i].nome, pivo.nome) > 0)
+            i++;
+
+        // Vai voltando enquanto estiver antes do pivô
+        while (strcmp(v[j].nome, pivo.nome) < 0)
+            j--;
+
+        if (i <= j)
+        {
+            aux = v[i];
+            v[i] = v[j];
+            v[j] = aux;
+
+            i++;
+            j--;
+        }
+    }
+
+    if (inicio < j)
+        cirilo(v, inicio, j);
+
+    if (i < fim)
+        cirilo(v, i, fim);
+}
+
+
+// func de ordenar preco do menor pro maior
+void ordenarPrecoMenorMaior(produtos v[], int inicio, int fim)
+{
+    int i = inicio, j = fim;
+    produtos pivo = v[(inicio + fim) / 2];
+    produtos aux;
+
+    while (i <= j)
+    {
+        // Avança enquanto o preço for menor que o o meio
+        while (v[i].valor < pivo.valor)
+            i++;
+
+        // Volta enquanto o preço for maior que o o meio
+        while (v[j].valor > pivo.valor)
+            j--;
+
+        if (i <= j)
+        {
+            aux = v[i];
+            v[i] = v[j];
+            v[j] = aux;
+
+            i++;
+            j--;
+        }
+    }
+
+    if (inicio < j)
+        ordenarPrecoMenorMaior(v, inicio, j);
+
+    if (i < fim)
+        ordenarPrecoMenorMaior(v, i, fim);
+}
+
+// mesma coisa da funcao acima, so inverte o sinal na verificacao
+void ordenarPrecoMaiorMenor(produtos v[], int inicio, int fim)
+{
+    int i = inicio, j = fim;
+    produtos pivo = v[(inicio + fim) / 2];
+    produtos aux;
+
+    while (i <= j)
+    {
+        // Avança enquanto o preço for maior que o meio
+        while (v[i].valor > pivo.valor)
+            i++;
+
+        // Volta enquanto o preço for menor que o o meio
+        while (v[j].valor < pivo.valor) // mudou só o sinal
+            j--;
+
+        if (i <= j)
+        {
+            aux = v[i];
+            v[i] = v[j];
+            v[j] = aux;
+
+            i++;
+            j--;
+        }
+    }
+
+    if (inicio < j)
+        ordenarPrecoMaiorMenor(v, inicio, j);
+
+    if (i < fim)
+        ordenarPrecoMaiorMenor(v, i, fim);
+}
+
 int main()
 {
     const char *arquivo = "Produtos.csv";
@@ -301,14 +405,26 @@ int main()
         printf("\n------------------------\n ");
         printf("Bem vindo a loja \n");
         printf("------------------------\n");
-        printf("1. cadastrar produto \n");
-        printf("2. Listar produto\n");
+        printf("1. Cadastrar produto\n");
+        printf("2. Listar produtos\n");
+        printf("3. Buscar produto por ID\n");
+        printf("4. Ordenar por nome (A-Z)\n");
+        printf("5. Ordenar por nome (Z-A)\n");
+        printf("6. Ordenar por preco (menor -> maior)\n");
+        printf("7. Ordenar por preco (maior -> menor)\n");
         printf("0. Sair da loja\n");
         printf("------------------------\n");
         printf("Escolha uma Opcao: \n");
 
         int opcao;
-        scanf("%d", &opcao);
+        // se digitar letra, o scanf nao retorna 1: limpa o buffer e volta ao menu
+        if (scanf("%d", &opcao) != 1)
+        {
+            while (getchar() != '\n')
+                ;
+            printf("Opcao invalida!\n");
+            continue;
+        }
 
         int n;
         switch (opcao)
@@ -316,17 +432,18 @@ int main()
         case 1:
             gravarProdutos(arquivo);
             break;
+
         case 2:
             n = lerProdutos(arquivo, p);
             formatarTabela(p, n);
             break;
+
         case 3:
             buscarProduto(arquivo);
             break;
 
-        case 4:
+        case 4: // nome A-Z
             n = lerProdutos(arquivo, p);
-
             if (n > 0)
             {
                 mariaJoaquina(p, 0, n - 1);
@@ -338,9 +455,49 @@ int main()
             }
             break;
 
+        case 5: // nome Z-A
+            n = lerProdutos(arquivo, p);
+            if (n > 0)
+            {
+                cirilo(p, 0, n - 1);
+                formatarTabela(p, n);
+            }
+            else
+            {
+                printf("Nenhum produto encontrado!\n");
+            }
+            break;
+
+        case 6: // preco menor -> maior
+            n = lerProdutos(arquivo, p);
+            if (n > 0)
+            {
+                ordenarPrecoMenorMaior(p, 0, n - 1);
+                formatarTabela(p, n);
+            }
+            else
+            {
+                printf("Nenhum produto encontrado!\n");
+            }
+            break;
+
+        case 7: // preco maior -> menor
+            n = lerProdutos(arquivo, p);
+            if (n > 0)
+            {
+                ordenarPrecoMaiorMenor(p, 0, n - 1);
+                formatarTabela(p, n);
+            }
+            else
+            {
+                printf("Nenhum produto encontrado!\n");
+            }
+            break;
+
         case 0:
             printf("saindo da loja...");
             return 0;
+
         default:
             printf("Opcao invalida!\n");
             break;
