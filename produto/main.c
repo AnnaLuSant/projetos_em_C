@@ -8,6 +8,7 @@ typedef struct
 {
     int id;
     char nome[50];
+    char categoria[30];
     float valor;
     int qtd;
 } produtos;
@@ -143,6 +144,17 @@ void gravarProdutos(const char *arquivo)
             continue;
         }
 
+        printf("Categoria: ");
+        fgets(produto[i].categoria, sizeof(produto[i].categoria), stdin);
+        produto[i].categoria[strcspn(produto[i].categoria, "\n")] = '\0'; // troca o \n por fim de texto
+
+        if (produto[i].categoria[0] == '\0') // categoria vazia nao pode
+        {
+            printf("Categoria invalida, por favor digite algo");
+            i--;
+            continue;
+        }
+
         printf("Valor: ");
         scanf("%f", &produto[i].valor);
         getchar();
@@ -170,9 +182,9 @@ void gravarProdutos(const char *arquivo)
 
     for (int i = 0; i < n; i++)
     {
-        fprintf(fp, "%d;%s;%.2f;%d\n",
+        fprintf(fp, "%d;%s;%s;%.2f;%d\n",
                 produto[i].id, produto[i].nome,
-                produto[i].valor, produto[i].qtd);
+                produto[i].categoria, produto[i].valor, produto[i].qtd);
     }
 
     fclose(fp);
@@ -195,9 +207,10 @@ int lerProdutos(const char *arquivo, produtos p[])
 
     while (fgets(linha, sizeof(linha), fp) && n < 100) // vai percorrer
     {
-        sscanf(linha, "%d;%49[^;];%f;%d",
+        sscanf(linha, "%d;%49[^;];%29[^;];%f;%d",
                &p[n].id,
-               &p[n].nome,
+               p[n].nome,
+               p[n].categoria,
                &p[n].valor,
                &p[n].qtd);
 
@@ -211,19 +224,20 @@ int lerProdutos(const char *arquivo, produtos p[])
 // funcao de printa a tabela
 void formatarTabela(produtos p[], int n)
 {
-    printf("\n-----------------------------------------------------\n");
-    printf("ID | Nome                | Valor | Quantidade |\n");
-    printf("-----------------------------------------------------\n");
+    printf("\n----------------------------------------------------------------------\n");
+    printf("ID | Nome                | Categoria      | Valor | Quantidade |\n");
+    printf("----------------------------------------------------------------------\n");
 
-    for (int i = 0; i < n; i++) // percorre cada item do array de struct de Produtos
+    for (int i = 0; i < n; i++)
     {
-        printf("%d | %-19s | %.2f | %d |\n", // %-19 formata para a linha ficar na msm posicao
+        printf("%d | %-19s | %-14s | %.2f | %d |\n",
                p[i].id,
                p[i].nome,
+               p[i].categoria,
                p[i].valor,
                p[i].qtd);
     }
-    printf("-----------------------------------------------------\n");
+    printf("----------------------------------------------------------------------\n");
 }
 
 // Função de buscar produtos pelo ID
@@ -323,7 +337,6 @@ void cirilo(produtos v[], int inicio, int fim)
         cirilo(v, i, fim);
 }
 
-
 // func de ordenar preco do menor pro maior
 void ordenarPrecoMenorMaior(produtos v[], int inicio, int fim)
 {
@@ -417,14 +430,7 @@ int main()
         printf("Escolha uma Opcao: \n");
 
         int opcao;
-        // se digitar letra, o scanf nao retorna 1: limpa o buffer e volta ao menu
-        if (scanf("%d", &opcao) != 1)
-        {
-            while (getchar() != '\n')
-                ;
-            printf("Opcao invalida!\n");
-            continue;
-        }
+        scanf("%d", &opcao);
 
         int n;
         switch (opcao)
