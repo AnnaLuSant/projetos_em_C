@@ -61,7 +61,7 @@ int nomejaExisteNoArquivo(const char *arquivo, char b[])
 
     while (fgets(linha, sizeof(linha), leitura))
     {
-        if (sscanf(linha, "%*d;%49[^;]", nomeLido) == 1) // esse cod é para ele ler a linh ate 50 de tamanho
+        if (sscanf(linha, "%*d,%49[^,]", nomeLido) == 1) // esse cod é para ele ler a linh ate 50 de tamanho
         {
             transformaEVerificaEmMinuscula(nomeLido); // transfomra emm minuscula para verificar o conteudo, se n chamasse ia dar como diferente por ter 1 maiuscula
             if (strcmp(nomeLido, b) == 0)
@@ -137,6 +137,13 @@ void gravarProdutos(const char *arquivo)
             continue;
         }
 
+        if (strchr(produto[i].nome, ',') != NULL)
+        {
+            printf("Nome nao pode ter virgula");
+            i--;
+            continue;
+        }
+
         if (nomejaExisteNoArquivo(arquivo, produto[i].nome) || nomeJaEscrito(produto, i, produto[i].nome))
         {
             printf("Nao pode adicionar mais de 1 nome igual");
@@ -151,6 +158,13 @@ void gravarProdutos(const char *arquivo)
         if (produto[i].categoria[0] == '\0') // categoria vazia nao pode
         {
             printf("Categoria invalida, por favor digite algo");
+            i--;
+            continue;
+        }
+
+        if (strchr(produto[i].categoria, ',') != NULL)
+        {
+            printf("Categoria nao pode ter virgula");
             i--;
             continue;
         }
@@ -182,7 +196,7 @@ void gravarProdutos(const char *arquivo)
 
     for (int i = 0; i < n; i++)
     {
-        fprintf(fp, "%d;%s;%s;%.2f;%d\n",
+        fprintf(fp, "%d,%s,%s,%.2f,%d\n",
                 produto[i].id, produto[i].nome,
                 produto[i].categoria, produto[i].valor, produto[i].qtd);
     }
@@ -210,7 +224,7 @@ int lerProdutos(const char *arquivo, produtos p[])
         // ADAPTADO: so conta a linha se os 5 campos foram lidos.
         // Antes uma linha em branco virava um produto "lixo", e agora que
         // o arquivo passa a ser reescrito (modificar/excluir), esse lixo seria gravado.
-        if (sscanf(linha, "%d;%49[^;];%29[^;];%f;%d",
+        if (sscanf(linha, "%d,%49[^,],%29[^,],%f,%d",
                    &p[n].id,
                    p[n].nome,
                    p[n].categoria,
@@ -242,7 +256,7 @@ int reescreverProdutos(const char *arquivo, produtos p[], int n)
 
     for (int i = 0; i < n; i++)
     {
-        fprintf(fp, "%d;%s;%s;%.2f;%d\n",
+        fprintf(fp, "%d,%s,%s,%.2f,%d\n",
                 p[i].id, p[i].nome,
                 p[i].categoria, p[i].valor, p[i].qtd);
     }
@@ -372,6 +386,12 @@ void modificarProduto(const char *arquivo)
             continue;
         }
 
+        if (strchr(novo.nome, ',') != NULL)
+        {
+            printf("Nome nao pode ter virgula\n");
+            continue;
+        }
+
         // compara com todos os OUTROS produtos (o proprio produto pode manter o nome)
         int repetido = 0;
         for (int i = 0; i < n; i++)
@@ -400,6 +420,12 @@ void modificarProduto(const char *arquivo)
         if (novo.categoria[0] == '\0')
         {
             printf("Categoria invalida, por favor digite algo\n");
+            continue;
+        }
+
+        if (strchr(novo.categoria, ',') != NULL)
+        {
+            printf("Categoria nao pode ter virgula\n");
             continue;
         }
         break;
@@ -704,40 +730,6 @@ void buscarPorCategoria(const char *arquivo)
     {
         formatarTabela(achados, qtd);
     }
-}
-
-// exporta os produtos para um CSV separado por virgula (o original continua com ;)
-void exportarCSV(const char *arquivo)
-{
-    produtos p[100];
-    int n = lerProdutos(arquivo, p);
-
-    if (n == 0)
-    {
-        printf("\nNenhum produto para exportar!\n");
-        return;
-    }
-
-    FILE *fp = fopen("Produtos_exportado.csv", "w");
-    if (fp == NULL)
-    {
-        printf("Erro ao criar arquivo de exportacao!\n");
-        return;
-    }
-
-    // cabecalho
-    fprintf(fp, "ID,Nome,Categoria,Valor,Quantidade\n");
-
-    for (int i = 0; i < n; i++)
-    {
-        // nome e categoria ficam entre aspas, assim uma virgula dentro do texto nao quebra as colunas
-        fprintf(fp, "%d,\"%s\",\"%s\",%.2f,%d\n",
-                p[i].id, p[i].nome,
-                p[i].categoria, p[i].valor, p[i].qtd);
-    }
-
-    fclose(fp);
-    printf("\n%d produtos exportados para Produtos_exportado.csv\n", n);
 }
 
 int main()

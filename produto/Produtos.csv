@@ -1,4 +1,4 @@
-1;melancia;fruta;20.00;20
-2;banana;fruta;15.00;20
-3;abacate;fruta;50.00;15
-4;carne;carne;40.00;20
+1,melancia,fruta,20.00,20
+2,banana,fruta,15.00,20
+3,abacate,fruta,50.00,15
+4,carne,carne,40.00,20
