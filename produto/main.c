@@ -227,12 +227,16 @@ int lerProdutos(const char *arquivo, produtos p[])
 
 // NOVO: reescreve o csv inteiro com o array (usada por modificar e excluir)
 // "w" apaga o conteudo antigo e grava de novo, no mesmo formato do gravarProdutos
+// reescreve o csv usando um arquivo temporario (evita perder dados se o programa cair no meio)
 int reescreverProdutos(const char *arquivo, produtos p[], int n)
 {
-    FILE *fp = fopen(arquivo, "w");
+    const char *temporario = "Produtos.tmp";
+
+    // 1. grava tudo no temporario, o original continua intacto
+    FILE *fp = fopen(temporario, "w");
     if (fp == NULL)
     {
-        printf("Erro ao abrir arquivo!\n");
+        printf("Erro ao criar arquivo temporario!\n");
         return 0;
     }
 
@@ -244,9 +248,15 @@ int reescreverProdutos(const char *arquivo, produtos p[], int n)
     }
 
     fclose(fp);
+    remove(arquivo); // no Windows o rename falha se o destino ja existe
+    if (rename(temporario, arquivo) != 0)
+    {
+        printf("Erro ao substituir o arquivo original!\n");
+        return 0;
+    }
+
     return 1;
 }
-
 // funcao de printa a tabela
 void formatarTabela(produtos p[], int n)
 {
@@ -694,6 +704,40 @@ void buscarPorCategoria(const char *arquivo)
     {
         formatarTabela(achados, qtd);
     }
+}
+
+// exporta os produtos para um CSV separado por virgula (o original continua com ;)
+void exportarCSV(const char *arquivo)
+{
+    produtos p[100];
+    int n = lerProdutos(arquivo, p);
+
+    if (n == 0)
+    {
+        printf("\nNenhum produto para exportar!\n");
+        return;
+    }
+
+    FILE *fp = fopen("Produtos_exportado.csv", "w");
+    if (fp == NULL)
+    {
+        printf("Erro ao criar arquivo de exportacao!\n");
+        return;
+    }
+
+    // cabecalho
+    fprintf(fp, "ID,Nome,Categoria,Valor,Quantidade\n");
+
+    for (int i = 0; i < n; i++)
+    {
+        // nome e categoria ficam entre aspas, assim uma virgula dentro do texto nao quebra as colunas
+        fprintf(fp, "%d,\"%s\",\"%s\",%.2f,%d\n",
+                p[i].id, p[i].nome,
+                p[i].categoria, p[i].valor, p[i].qtd);
+    }
+
+    fclose(fp);
+    printf("\n%d produtos exportados para Produtos_exportado.csv\n", n);
 }
 
 int main()
