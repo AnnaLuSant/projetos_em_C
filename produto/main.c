@@ -431,7 +431,7 @@ void modificarProduto(const char *arquivo)
     }
 }
 
-// NOVO: excluir um produto pelo ID
+// exclui um produto pelo ID
 void excluirProduto(const char *arquivo)
 {
     produtos p[100];
@@ -605,6 +605,97 @@ void ordenarPrecoMaiorMenor(produtos v[], int inicio, int fim)
         ordenarPrecoMaiorMenor(v, i, fim);
 }
 
+// busca pelo nome, ignora maiuscula e minuscula
+void buscarPorNome(const char *arquivo)
+{
+    produtos p[100];
+    produtos achados[100];
+    char busca[50];
+    char nomeMin[50];
+    int qtd = 0;
+
+    int n = lerProdutos(arquivo, p);
+    if (n == 0)
+    {
+        printf("\nNenhum produto cadastrado!\n");
+        return;
+    }
+
+    getchar(); // consome o Enter que sobrou do scanf do menu
+
+    printf("\nDigite o nome: ");
+    fgets(busca, sizeof(busca), stdin);
+    busca[strcspn(busca, "\n")] = '\0'; // troca o \n por fim de texto
+    transformaEVerificaEmMinuscula(busca);
+
+    for (int i = 0; i < n; i++)
+    {
+        strcpy(nomeMin, p[i].nome); // copia pra n alterar o nome original
+        transformaEVerificaEmMinuscula(nomeMin);
+
+        // strstr acha o texto dentro do outro, se n achar devolve NULL
+        if (strstr(nomeMin, busca) != NULL)
+        {
+            achados[qtd] = p[i];
+            qtd++;
+        }
+    }
+
+    if (qtd == 0)
+    {
+        printf("\nProduto nao encontrado!\n");
+    }
+    else
+    {
+        formatarTabela(achados, qtd);
+    }
+}
+
+// busca pela categoria, mesma logica da busca por nome
+void buscarPorCategoria(const char *arquivo)
+{
+    produtos p[100];
+    produtos achados[100];
+    char busca[30];
+    char catMin[30];
+    int qtd = 0;
+
+    int n = lerProdutos(arquivo, p);
+    if (n == 0)
+    {
+        printf("\nNenhum produto cadastrado!\n");
+        return;
+    }
+
+    getchar(); // consome o Enter que sobrou do scanf do menu
+
+    printf("\nDigite a categoria: ");
+    fgets(busca, sizeof(busca), stdin);
+    busca[strcspn(busca, "\n")] = '\0';
+    transformaEVerificaEmMinuscula(busca);
+
+    for (int i = 0; i < n; i++)
+    {
+        strcpy(catMin, p[i].categoria);
+        transformaEVerificaEmMinuscula(catMin);
+
+        if (strstr(catMin, busca) != NULL)
+        {
+            achados[qtd] = p[i];
+            qtd++;
+        }
+    }
+
+    if (qtd == 0)
+    {
+        printf("\nNenhum produto nessa categoria!\n");
+    }
+    else
+    {
+        formatarTabela(achados, qtd);
+    }
+}
+
 int main()
 {
     const char *arquivo = "Produtos.csv";
@@ -623,8 +714,10 @@ int main()
         printf("5. Ordenar por nome (Z-A)\n");
         printf("6. Ordenar por preco (menor -> maior)\n");
         printf("7. Ordenar por preco (maior -> menor)\n");
-        printf("8. Modificar produto\n"); // NOVO
-        printf("9. Excluir produto\n");   // NOVO
+        printf("8. Modificar produto\n");
+        printf("9. Excluir produto\n");
+        printf("10. Buscar produto por nome\n");
+        printf("11. Buscar produto por categoria\n");
         printf("0. Sair da loja\n");
         printf("------------------------\n");
         printf("Escolha uma Opcao: \n");
@@ -700,12 +793,20 @@ int main()
             }
             break;
 
-        case 8: // NOVO: modificar
+        case 8:
             modificarProduto(arquivo);
             break;
 
-        case 9: // NOVO: excluir
+        case 9:
             excluirProduto(arquivo);
+            break;
+
+        case 10:
+            buscarPorNome(arquivo);
+            break;
+
+        case 11:
+            buscarPorCategoria(arquivo);
             break;
 
         case 0:
