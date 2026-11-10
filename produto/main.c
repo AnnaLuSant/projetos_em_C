@@ -207,18 +207,44 @@ int lerProdutos(const char *arquivo, produtos p[])
 
     while (fgets(linha, sizeof(linha), fp) && n < 100) // vai percorrer
     {
-        sscanf(linha, "%d;%49[^;];%29[^;];%f;%d",
-               &p[n].id,
-               p[n].nome,
-               p[n].categoria,
-               &p[n].valor,
-               &p[n].qtd);
-
-        n++; // vai adicionando ao array
+        // ADAPTADO: so conta a linha se os 5 campos foram lidos.
+        // Antes uma linha em branco virava um produto "lixo", e agora que
+        // o arquivo passa a ser reescrito (modificar/excluir), esse lixo seria gravado.
+        if (sscanf(linha, "%d;%49[^;];%29[^;];%f;%d",
+                   &p[n].id,
+                   p[n].nome,
+                   p[n].categoria,
+                   &p[n].valor,
+                   &p[n].qtd) == 5)
+        {
+            n++; // vai adicionando ao array
+        }
     }
 
     fclose(fp);
     return n;
+}
+
+// NOVO: reescreve o csv inteiro com o array (usada por modificar e excluir)
+// "w" apaga o conteudo antigo e grava de novo, no mesmo formato do gravarProdutos
+int reescreverProdutos(const char *arquivo, produtos p[], int n)
+{
+    FILE *fp = fopen(arquivo, "w");
+    if (fp == NULL)
+    {
+        printf("Erro ao abrir arquivo!\n");
+        return 0;
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        fprintf(fp, "%d;%s;%s;%.2f;%d\n",
+                p[i].id, p[i].nome,
+                p[i].categoria, p[i].valor, p[i].qtd);
+    }
+
+    fclose(fp);
+    return 1;
 }
 
 // funcao de printa a tabela
@@ -267,6 +293,178 @@ void buscarProduto(const char *arquivo)
     if (p_encontrado == 0)
     {
         printf("\nProduto nao encontrado!\n");
+    }
+}
+
+// NOVO: le um ID digitado e devolve a posicao dele no array (-1 se nao achar ou se digitou errado)
+int pedirIdEBuscarPosicao(produtos p[], int n, const char *mensagem)
+{
+    char linha[MAX_LINHA];
+    int id_busca;
+
+    printf("\n%s", mensagem);
+    fgets(linha, sizeof(linha), stdin);
+
+    if (sscanf(linha, "%d", &id_busca) != 1)
+    {
+        return -1;
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        if (p[i].id == id_busca)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// NOVO: modificar um produto pelo ID (mesmas validacoes do cadastro)
+void modificarProduto(const char *arquivo)
+{
+    produtos p[100];
+    char linha[MAX_LINHA];
+
+    int n = lerProdutos(arquivo, p);
+    if (n == 0)
+    {
+        printf("Nenhum produto encontrado!\n");
+        return;
+    }
+
+    getchar(); // consome o Enter que sobrou do scanf do menu
+
+    int pos = pedirIdEBuscarPosicao(p, n, "Digite o ID do produto que deseja modificar: ");
+    if (pos == -1)
+    {
+        printf("\nProduto nao encontrado!\n");
+        return;
+    }
+
+    printf("\nProduto atual:\n");
+    formatarTabela(&p[pos], 1);
+
+    produtos novo = p[pos]; // trabalha numa copia, so salva no final (o id continua o mesmo)
+
+    // NOME
+    while (1)
+    {
+        printf("Novo nome: ");
+        fgets(novo.nome, sizeof(novo.nome), stdin);
+        novo.nome[strcspn(novo.nome, "\n")] = '\0';
+
+        transformaEVerificaEmMinuscula(novo.nome);
+
+        if (novo.nome[0] == '\0')
+        {
+            printf("Nome invalido, por favor digite algo\n");
+            continue;
+        }
+
+        // compara com todos os OUTROS produtos (o proprio produto pode manter o nome)
+        int repetido = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (i != pos && strcmp(p[i].nome, novo.nome) == 0)
+            {
+                repetido = 1;
+                break;
+            }
+        }
+        if (repetido)
+        {
+            printf("Nao pode adicionar mais de 1 nome igual\n");
+            continue;
+        }
+        break;
+    }
+
+    // CATEGORIA
+    while (1)
+    {
+        printf("Nova categoria: ");
+        fgets(novo.categoria, sizeof(novo.categoria), stdin);
+        novo.categoria[strcspn(novo.categoria, "\n")] = '\0';
+
+        if (novo.categoria[0] == '\0')
+        {
+            printf("Categoria invalida, por favor digite algo\n");
+            continue;
+        }
+        break;
+    }
+
+    // VALOR
+    while (1)
+    {
+        printf("Novo valor: ");
+        fgets(linha, sizeof(linha), stdin);
+
+        if (sscanf(linha, "%f", &novo.valor) != 1 || novo.valor <= 0)
+        {
+            printf("valor invalido, por favor digite algo\n");
+            continue;
+        }
+        break;
+    }
+
+    // QUANTIDADE
+    while (1)
+    {
+        printf("Nova quantidade em estoque: ");
+        fgets(linha, sizeof(linha), stdin);
+
+        if (sscanf(linha, "%d", &novo.qtd) != 1 || novo.qtd < 0)
+        {
+            printf("quantidade invalida, por favor digite algo\n");
+            continue;
+        }
+        break;
+    }
+
+    p[pos] = novo;
+
+    if (reescreverProdutos(arquivo, p, n))
+    {
+        printf("Produto modificado com sucesso!\n");
+    }
+}
+
+// NOVO: excluir um produto pelo ID
+void excluirProduto(const char *arquivo)
+{
+    produtos p[100];
+
+    int n = lerProdutos(arquivo, p);
+    if (n == 0)
+    {
+        printf("Nenhum produto encontrado!\n");
+        return;
+    }
+
+    getchar(); // consome o Enter que sobrou do scanf do menu
+
+    int pos = pedirIdEBuscarPosicao(p, n, "Digite o ID do produto que deseja excluir: ");
+    if (pos == -1)
+    {
+        printf("\nProduto nao encontrado!\n");
+        return;
+    }
+
+    printf("\nProduto a ser excluido:\n");
+    formatarTabela(&p[pos], 1);
+
+    // puxa todo mundo depois dele uma posicao pra tras, tampando o buraco
+    for (int i = pos; i < n - 1; i++)
+    {
+        p[i] = p[i + 1];
+    }
+    n--;
+
+    if (reescreverProdutos(arquivo, p, n))
+    {
+        printf("Produto excluido com sucesso!\n");
     }
 }
 
@@ -425,6 +623,8 @@ int main()
         printf("5. Ordenar por nome (Z-A)\n");
         printf("6. Ordenar por preco (menor -> maior)\n");
         printf("7. Ordenar por preco (maior -> menor)\n");
+        printf("8. Modificar produto\n"); // NOVO
+        printf("9. Excluir produto\n");   // NOVO
         printf("0. Sair da loja\n");
         printf("------------------------\n");
         printf("Escolha uma Opcao: \n");
@@ -498,6 +698,14 @@ int main()
             {
                 printf("Nenhum produto encontrado!\n");
             }
+            break;
+
+        case 8: // NOVO: modificar
+            modificarProduto(arquivo);
+            break;
+
+        case 9: // NOVO: excluir
+            excluirProduto(arquivo);
             break;
 
         case 0:
